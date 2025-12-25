@@ -3,12 +3,11 @@ import logging
 import re
 from typing import TypedDict
 
-import numpy as np
 from openai import AsyncOpenAI
 from pydantic import TypeAdapter
 
-from src.config import AppSettings, LLMConfig
-from src.schemas import PromptLogprob, Scenario, ScenarioResult, TokenEntropy
+from src.config import LLMConfig
+from src.schemas import PromptLogprob, TokenEntropy
 from src.utils import calculate_token_entropy
 
 logger = logging.getLogger(__name__)
@@ -143,10 +142,13 @@ async def find_ptb_words(
         # Используем set для уникальности, затем сортируем
         matched_token_indices = sorted(list(set(prompt_tokens_map[start_idx:end_idx])))
 
+        # вычисляем энтропию и нормализуем
         word_entropy = float(
             sum([entropy2token[i]["entropy"] for i in matched_token_indices])
         )
-        res_words.append(WordInfoRes(entropy=word_entropy, **word))
+        n_word_entropy = word_entropy / len(matched_token_indices)
+
+        res_words.append(WordInfoRes(entropy=n_word_entropy, **word))
 
     result = PtbScenarioRes(
         words=res_words, answer=answer, logprobs=entropy2token, **scenario.copy()
