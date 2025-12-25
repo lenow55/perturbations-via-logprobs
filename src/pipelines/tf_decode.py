@@ -56,7 +56,14 @@ async def main(args: Namespace):
         text = item.passage.text
         question = random.choice(item.passage.questions)
         answer = random.choice(question.answers)
-        text = text + question.question + answer.text
+        text = (
+            "context: "
+            + text
+            + "\nquestion: "
+            + question.question
+            + "\nanswer: "
+            + answer.text
+        )
 
         tasks.append(
             asyncio.create_task(
