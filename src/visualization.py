@@ -49,9 +49,7 @@ def create_highlighted_text_html(data: list[TokenEntropy], config: AppSettings) 
         span = f"""
 <span class="token-span" 
       style="background-color: {bg_color}; border-bottom: {border}; cursor: help; padding: 0 2px; border-radius: 3px;"
-      title="Token: '{token.strip()}'&#10;Entropy: {entropy:.3f} bits">
-{display_token}
-</span>
+      title="Token: '{token}'&#10;Entropy: {entropy:.3f} bits">{display_token}</span>
         """
         html_parts.append(span)
 

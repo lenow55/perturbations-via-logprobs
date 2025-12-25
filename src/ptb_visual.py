@@ -49,7 +49,7 @@ def create_highlighted_text_html(data: list[WordInfoRes], config: AppSettings) -
         span = f"""
 <span class="word-span" 
       style="background-color: {bg_color}; border-bottom: {border}; cursor: help; padding: 0 2px; border-radius: 3px;"
-      title="Word: '{word.strip()}'&#10;Entropy: {entropy:.3f} bits">
+      title="Word: '{word}'&#10;Entropy: {entropy:.3f} bits">
 {display_token}
 </span>
         """
