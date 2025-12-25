@@ -8,7 +8,7 @@ from pydantic import TypeAdapter
 
 from src.config import LLMConfig
 from src.schemas import PromptLogprob, TokenEntropy
-from src.utils import calculate_token_entropy
+from src.utils.base import calculate_token_entropy
 
 logger = logging.getLogger(__name__)
 

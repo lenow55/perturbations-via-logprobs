@@ -3,9 +3,8 @@ import logging
 import plotly.graph_objects as go
 from plotly.io import to_html
 
-from src.ptb_utils import PtbScenarioRes, WordInfoRes
+from src.utils.perturb import PtbScenarioRes, WordInfoRes
 from src.config import AppSettings
-from src.schemas import ScenarioResult, TokenEntropy
 
 logger = logging.getLogger(__name__)
 

@@ -9,7 +9,11 @@ from pydantic import TypeAdapter
 from src.config import AppSettings
 from src.params import parser
 from src.schemas import ReadingComprehensionItem, ScenarioResult
-from src.utils import configure_logging, create_openai_client, analyze_prompt_entropy
+from src.utils.base import (
+    configure_logging,
+    create_openai_client,
+    analyze_prompt_entropy,
+)
 from src.visualization import generate_full_report
 
 logger = logging.getLogger(__name__)
