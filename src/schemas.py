@@ -1,4 +1,4 @@
-from typing import TypedDict
+from typing import NotRequired, TypedDict
 from pydantic import BaseModel, Field
 
 
@@ -10,6 +10,7 @@ class TokenEntropy(TypedDict):
 class Scenario(TypedDict):
     text: str
     name: str
+    label: NotRequired[int]
 
 
 class ScenarioResult(Scenario):

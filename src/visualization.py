@@ -47,11 +47,11 @@ def create_highlighted_text_html(data: list[TokenEntropy], config: AppSettings) 
 
         # HTML span с тултипом
         span = f"""
-        <span class="token-span" 
-              style="background-color: {bg_color}; border-bottom: {border}; cursor: help; padding: 0 2px; border-radius: 3px;"
-              title="Token: '{token.strip()}'&#10;Entropy: {entropy:.3f} bits">
-            {display_token}
-        </span>
+<span class="token-span" 
+      style="background-color: {bg_color}; border-bottom: {border}; cursor: help; padding: 0 2px; border-radius: 3px;"
+      title="Token: '{token.strip()}'&#10;Entropy: {entropy:.3f} bits">
+{display_token}
+</span>
         """
         html_parts.append(span)
 
@@ -138,6 +138,8 @@ def generate_full_report(
             {chart_html}
             <h3>Визуализация текста (наведите на слова):</h3>
             {text_html}
+            <h3>Корректность ответа (1 - корректный; 0 - не корректный):</h3>
+            <p>{sc.get("label", "не указано")}</p>
         </div>
         """
 
