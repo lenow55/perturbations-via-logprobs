@@ -1,0 +1,23 @@
+[project]
+name = "test-logits"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "Новиков Илья",email = "nov.ilucha@yandex.ru"}
+]
+readme = "README.md"
+requires-python = ">=3.11,<3.13"
+dependencies = [
+    "openai (>=2.14.0,<3.0.0)",
+    "plotly (>=6.5.0,<7.0.0)",
+    "numpy (<=2.3.5)",
+    "httpx[socks] (>=0.28.1,<0.29.0)",
+    "pandas (>=2.3.3,<3.0.0)",
+    "pandas-stubs (>=2.3.3.251219,<3.0.0.0)",
+    "pydantic-settings (>=2.12.0,<3.0.0)"
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
