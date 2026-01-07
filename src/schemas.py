@@ -1,12 +1,25 @@
 from typing import NotRequired, TypedDict
+
 from pydantic import BaseModel, Field
 
 
+# INFO: Контейнеры для хранения логпробов
 class TokenEntropy(TypedDict):
     token: str
     entropy: float
 
 
+class WordInfo(TypedDict):
+    word: str
+    start: int
+    end: int
+
+
+class WordInfoRes(WordInfo):
+    entropy: float
+
+
+# INFO: Контейнеры для хранения сценариев запросов
 class Scenario(TypedDict):
     text: str
     name: str
@@ -15,6 +28,22 @@ class Scenario(TypedDict):
 
 class ScenarioResult(Scenario):
     logprobs: list[TokenEntropy]
+
+
+class PtbScenario(TypedDict):
+    context: str
+    name: str
+    question: str
+    reference: str
+
+
+class PtbScenarioRes(PtbScenario):
+    logprobs: list[TokenEntropy]
+    words: list[WordInfoRes]
+    answer: str
+
+
+# INFO: Контейнеры для валидации вывода VLLM
 
 
 class PromptLogprob(BaseModel):
@@ -33,6 +62,9 @@ class PromptLogprob(BaseModel):
     """
     Позиция в отранжированном списке токенов
     """
+
+
+# INFO: Модели валидации датасета MuSeRC
 
 
 class Answer(BaseModel):

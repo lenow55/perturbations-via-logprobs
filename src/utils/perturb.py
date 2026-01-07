@@ -7,33 +7,10 @@ from openai import AsyncOpenAI
 from pydantic import TypeAdapter
 
 from src.config import LLMConfig
-from src.schemas import PromptLogprob, TokenEntropy
+from src.schemas import PromptLogprob, TokenEntropy, WordInfo, WordInfoRes
 from src.utils.base import calculate_token_entropy
 
 logger = logging.getLogger(__name__)
-
-
-class WordInfo(TypedDict):
-    word: str
-    start: int
-    end: int
-
-
-class WordInfoRes(WordInfo):
-    entropy: float
-
-
-class PtbScenario(TypedDict):
-    context: str
-    name: str
-    question: str
-    reference: str
-
-
-class PtbScenarioRes(PtbScenario):
-    logprobs: list[TokenEntropy]
-    words: list[WordInfoRes]
-    answer: str
 
 
 def get_words_and_indices(text: str) -> list[WordInfo]:
