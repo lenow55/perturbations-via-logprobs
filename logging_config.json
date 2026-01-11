@@ -25,6 +25,12 @@
       "handlers": [
         "default"
       ]
+    },
+    "research": {
+      "level": "DEBUG",
+      "handlers": [
+        "default"
+      ]
     }
   }
 }

@@ -2,3 +2,4 @@ __pycache__
 MuSeRC
 config*.json
 reports
+research/.ipynb_checkpoints
