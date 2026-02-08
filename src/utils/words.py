@@ -14,7 +14,7 @@ from src.schemas import (
     WordInfo,
     WordInfoRes,
 )
-from src.utils.base import calculate_token_entropy
+from src.utils.tokens import calculate_token_entropy
 
 logger = logging.getLogger(__name__)
 
