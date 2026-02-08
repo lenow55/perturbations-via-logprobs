@@ -12,7 +12,7 @@ from src.params import parser
 from src.ptb_visual import generate_full_report
 from src.schemas import PtbScenarioRes, ReadingComprehensionItem
 from src.utils.base import configure_logging, create_openai_client
-from src.utils.perturb import find_ptb_words
+from src.utils.words import find_ptb_words
 
 logger = logging.getLogger(__name__)
 

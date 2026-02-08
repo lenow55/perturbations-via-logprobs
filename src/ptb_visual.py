@@ -5,7 +5,7 @@ from plotly.io import to_html
 
 from src.config import AppSettings
 from src.schemas import PtbScenarioRes
-from src.utils.perturb import WordInfoRes
+from src.utils.words import WordInfoRes
 
 logger = logging.getLogger(__name__)
 

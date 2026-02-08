@@ -12,8 +12,8 @@ from src.schemas import ReadingComprehensionItem, ScenarioResult
 from src.utils.base import (
     configure_logging,
     create_openai_client,
-    analyze_prompt_entropy,
 )
+from src.utils.tokens import analyze_prompt_entropy
 from src.visualization import generate_full_report
 
 logger = logging.getLogger(__name__)

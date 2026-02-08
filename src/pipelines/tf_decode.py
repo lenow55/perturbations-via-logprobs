@@ -3,7 +3,6 @@ import logging
 from argparse import Namespace
 import random
 
-import numpy as np
 import pandas as pd
 from numpy.random import RandomState
 from pydantic import TypeAdapter
@@ -12,10 +11,10 @@ from src.config import AppSettings
 from src.params import parser
 from src.schemas import ReadingComprehensionItem, ScenarioResult
 from src.utils.base import (
-    analyze_prompt_entropy,
     configure_logging,
     create_openai_client,
 )
+from src.utils.tokens import analyze_prompt_entropy
 from src.visualization import generate_full_report
 
 logger = logging.getLogger(__name__)
