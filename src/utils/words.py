@@ -21,18 +21,21 @@ logger = logging.getLogger(__name__)
 
 
 def get_words_and_indices(text: str) -> list[WordInfo]:
-    # Паттерн r'\w+' ищет последовательности букв, цифр и нижних подчеркиваний.
-    # Это работает и для кириллицы, и для латиницы.
-    matches = re.finditer(r"\w+", text)
+    # Разбор паттерна:
+    # [«"'({\[]* - Ноль или более открывающих скобок или кавычек любых типов
+    # \w+          - Первая часть слова (буквы, цифры)
+    # (?:[-']\w+)* - Опциональные продолжения слова через дефис или апостроф (например, "don't" или "кто-то")
+    # [»"')}\]]* - Ноль или более закрывающих скобок или кавычек
+    pattern = r"[«\"'({\[]*\w+(?:[-']\w+)*[»\"')}\]]*"
+
+    matches = re.finditer(pattern, text)
 
     results: list[WordInfo] = []
 
     for match in matches:
-        word = match.group()  # Само слово
-        start_pos = match.start()  # Начальная позиция (индекс)
-        end_pos = match.end()  # Начальная позиция (индекс)
-
-        results.append({"word": word, "start": start_pos, "end": end_pos})
+        results.append(
+            {"word": match.group(), "start": match.start(), "end": match.end()}
+        )
 
     return results
 
