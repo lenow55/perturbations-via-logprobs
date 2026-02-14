@@ -1,11 +1,14 @@
+import asyncio
 import json
 import logging
 from logging import config as log_config_m
 
 from httpx import AsyncClient, Timeout
 from openai import AsyncOpenAI
+from pydantic import TypeAdapter
 
 from src.config import AppSettings, LLMConfig
+from src.schemas import PromptLogprob
 
 logger = logging.getLogger(__name__)
 
@@ -29,3 +32,64 @@ def create_openai_client(config: LLMConfig) -> AsyncOpenAI:
         http_client=http_client,
     )
     return client
+
+
+async def calculate_prompt_logprobs(
+    idx: str,
+    query: str,
+    client: AsyncOpenAI,
+    semaphore: asyncio.Semaphore,
+    config: LLMConfig,
+    model: str,
+) -> tuple[str, list[None | dict[str, PromptLogprob]]]:
+    """
+    Отправляет запрос в LLM и возвращает сгенерированный ответ вместе с логпробами промпта.
+
+    Функция выполняет асинхронный вызов к API модели, запрашивая генерацию текста
+    и информацию о вероятностях (logprobs) для токенов входного промпта (топ-5 вариантов).
+    Для контроля конкурентности используется семафор.
+
+    Args:
+        idx (str): Уникальный идентификатор запроса (используется для логирования).
+        query (str): Пользовательский запрос (промпт) для отправки в модель.
+        client (AsyncOpenAI): Асинхронный клиент OpenAI.
+        semaphore (asyncio.Semaphore): Семафор для ограничения числа одновременных запросов.
+        config (LLMConfig): Конфигурация модели, содержащая дополнительные параметры
+            запроса (`extra_body` и `params_extra`).
+        model (str): Название используемой LLM модели (например, 'gpt-4o').
+
+    Returns:
+        tuple[str, list[None | dict[str, PromptLogprob]]]: Кортеж, состоящий из двух элементов:
+            - Строка со сгенерированным ответом модели.
+            - Список вероятностей (логпробов) для каждого токена исходного промпта.
+
+    Raises:
+        RuntimeError: Если API модели не вернуло данные о логпробах промпта
+            в поле `model_extra` или само поле `model_extra` отсутствует.
+    """
+    # INFO: 2. дальше закидываем запрос в LLM
+    async with semaphore:
+        logger.debug(f"Start request id {idx}")
+
+        extra_body = {"prompt_logprobs": 5}
+        extra_body.update(config.extra_body)
+
+        response = await client.chat.completions.create(
+            model=model,
+            messages=[{"role": "user", "content": query}],
+            logprobs=True,
+            top_logprobs=5,  # Берем топ-5 вариантов для расчета неопределенности
+            extra_body=extra_body,
+            **config.params_extra,
+        )
+
+    answer = str(response.choices[0].message.content)
+
+    # INFO: 3. Проходим по каждому сгенерированному токену
+    ta = TypeAdapter(list[None | dict[str, PromptLogprob]])
+    if not response.model_extra:
+        raise RuntimeError("Can't compute without prompt logprobs")
+    if "prompt_logprobs" not in response.model_extra:
+        raise RuntimeError("Can't compute without prompt logprobs")
+    prompt_logprobs = ta.validate_python(response.model_extra["prompt_logprobs"])
+    return answer, prompt_logprobs

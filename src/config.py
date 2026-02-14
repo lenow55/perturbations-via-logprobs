@@ -15,6 +15,7 @@ class LLMParams(TypedDict):
     stop: NotRequired[str]
     presence_penalty: NotRequired[float]
     top_p: NotRequired[float]
+    max_tokens: NotRequired[int]
 
 
 class LLMConfig(BaseSettings):

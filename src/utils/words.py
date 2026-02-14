@@ -14,6 +14,7 @@ from src.schemas import (
     WordInfo,
     WordInfoRes,
 )
+from src.utils.base import calculate_prompt_logprobs
 from src.utils.tokens import calculate_token_entropy
 
 logger = logging.getLogger(__name__)
@@ -53,38 +54,21 @@ async def find_ptb_words(
     words_infos: list[WordInfo] = get_words_and_indices(scenario["context"])
     text = "context: " + scenario["context"] + "\nquestion: " + scenario["question"]
 
-    # INFO: 2. дальше закидываем запрос в LLM
-    async with semaphore:
-        logger.debug(f"Start request id {idx}")
-
-        extra_body = {"prompt_logprobs": 5}
-        extra_body.update(config.extra_body)
-
-        response = await client.chat.completions.create(
-            model=model,
-            messages=[{"role": "user", "content": text}],
-            logprobs=True,
-            top_logprobs=5,  # Берем топ-5 вариантов для расчета неопределенности
-            max_tokens=5000,
-            extra_body=extra_body,
-            **config.params_extra,
-        )
-
-    answer = str(response.choices[0].message.content)
-
-    # INFO: 3. Проходим по каждому сгенерированному токену
-    ta = TypeAdapter(list[None | dict[str, PromptLogprob]])
-    if not response.model_extra:
-        raise RuntimeError("Can't compute without prompt logprobs")
-    if "prompt_logprobs" not in response.model_extra:
-        raise RuntimeError("Can't compute without prompt logprobs")
-    prompt_logprobs = ta.validate_python(response.model_extra["prompt_logprobs"])
+    answer, prompt_logprobs = await calculate_prompt_logprobs(
+        idx=idx,
+        query=text,
+        client=client,
+        semaphore=semaphore,
+        config=config,
+        model=model,
+    )
 
     entropy2token: list[TokenEntropy] = []
     prompt_buffer: str = ""  # буфер текста
     prompt_tokens_map: list[int] = []  # мапинг текста на id токена
 
-    for i, forward in enumerate(prompt_logprobs):
+    counter = 0
+    for forward in prompt_logprobs:
         if not isinstance(forward, dict):
             continue
         logprobs: list[PromptLogprob] = []
@@ -98,7 +82,8 @@ async def find_ptb_words(
         entropy2token.append({"token": str(token_str), "entropy": entropy})
 
         prompt_buffer = prompt_buffer + str(token_str)
-        prompt_tokens_map.extend([i] * len(str(token_str)))
+        prompt_tokens_map.extend([counter] * len(str(token_str)))
+        counter += 1
 
     # INFO: обрезаем всё кроме контекста
     start_i = prompt_buffer.find("context: ") + 9

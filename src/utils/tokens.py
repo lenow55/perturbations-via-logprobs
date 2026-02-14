@@ -7,6 +7,7 @@ from pydantic import TypeAdapter
 
 from src.config import LLMConfig
 from src.schemas import PromptLogprob, Scenario, ScenarioResult, TokenEntropy
+from src.utils.base import calculate_prompt_logprobs
 
 logger = logging.getLogger(__name__)
 
@@ -48,29 +49,15 @@ async def analyze_prompt_entropy(
     """
     Генерирует ответ и возвращает токены и их энтропию.
     """
-    async with semaphore:
-        logger.debug(f"Start request id {idx}")
 
-        extra_body = {"prompt_logprobs": 5}
-        extra_body.update(config.extra_body)
-
-        response = await client.chat.completions.create(
-            model=model,
-            messages=[{"role": "user", "content": scenario["text"]}],
-            logprobs=True,
-            top_logprobs=5,  # Берем топ-5 вариантов для расчета неопределенности
-            max_tokens=5,
-            extra_body=extra_body,
-            **config.params_extra,
-        )
-
-    # Проходим по каждому сгенерированному токену
-    ta = TypeAdapter(list[None | dict[str, PromptLogprob]])
-    if not response.model_extra:
-        raise RuntimeError("Can't compute without prompt logprobs")
-    if "prompt_logprobs" not in response.model_extra:
-        raise RuntimeError("Can't compute without prompt logprobs")
-    prompt_logprobs = ta.validate_python(response.model_extra["prompt_logprobs"])
+    _, prompt_logprobs = await calculate_prompt_logprobs(
+        idx=idx,
+        query=scenario["text"],
+        client=client,
+        semaphore=semaphore,
+        config=config,
+        model=model,
+    )
 
     data: list[TokenEntropy] = []
     for forward in prompt_logprobs:
