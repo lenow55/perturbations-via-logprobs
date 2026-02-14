@@ -92,14 +92,14 @@ async def find_ptb_words(
     start_i = prompt_buffer.find("context: ") + 9
     end_i = prompt_buffer.find("question: ")
 
-    prompt_buffer = prompt_buffer[start_i:end_i]
-    prompt_tokens_map = prompt_tokens_map[start_i:end_i]
+    prompt_buffer_c = prompt_buffer[start_i:end_i]
+    prompt_tokens_map_c = prompt_tokens_map[start_i:end_i]
     res_words: list[WordInfoRes] = []
 
     current_pos = 0
     for word in words_infos:
         try:
-            start_idx = prompt_buffer.index(word["word"], current_pos)
+            start_idx = prompt_buffer_c.index(word["word"], current_pos)
         except ValueError:
             logger.warning(
                 f"Слово '{word}' не найдено в тексте токенов начиная с позиции {current_pos}."
@@ -111,7 +111,9 @@ async def find_ptb_words(
 
         # Собираем все уникальные токены, которые попали в диапазон слова
         # Используем set для уникальности, затем сортируем
-        matched_token_indices = sorted(list(set(prompt_tokens_map[start_idx:end_idx])))
+        matched_token_indices = sorted(
+            list(set(prompt_tokens_map_c[start_idx:end_idx]))
+        )
 
         # вычисляем энтропию и нормализуем
         word_entropy = float(
