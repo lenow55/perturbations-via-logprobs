@@ -35,6 +35,7 @@ class PtbScenario(TypedDict):
     name: str
     question: str
     reference: str
+    label: NotRequired[int]
 
 
 class PtbScenarioRes(PtbScenario):
