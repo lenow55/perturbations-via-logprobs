@@ -123,3 +123,12 @@ class ReadingComprehensionItem(BaseModel):
     passage: PassageData = Field(
         ..., description="Объект, содержащий текст и структуру вопросов-ответов."
     )
+
+
+# INFO: контейнер для подготовленных данных
+
+
+class Check(TypedDict):
+    question: str
+    answer: str
+    passage_id: int

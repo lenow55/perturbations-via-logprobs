@@ -3,3 +3,4 @@ MuSeRC
 config*.json
 reports
 research/.ipynb_checkpoints
+/data
