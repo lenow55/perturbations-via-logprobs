@@ -71,14 +71,14 @@ async def calculate_prompt_logprobs(
     async with semaphore:
         logger.debug(f"Start request id {idx}")
 
-        extra_body = {"prompt_logprobs": 5}
+        extra_body = {"prompt_logprobs": config.count_logprobs}
         extra_body.update(config.extra_body)
 
         response = await client.chat.completions.create(
             model=model,
             messages=[{"role": "user", "content": query}],
             logprobs=True,
-            top_logprobs=5,  # Берем топ-5 вариантов для расчета неопределенности
+            top_logprobs=config.count_logprobs,  # Берем топ-k вариантов для расчета неопределенности
             extra_body=extra_body,
             **config.params_extra,
         )

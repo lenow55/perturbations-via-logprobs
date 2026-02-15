@@ -24,6 +24,7 @@ class LLMConfig(BaseSettings):
     timeout: int = 50
     async_cals: int = 5
     proxy_url: str | None = None
+    count_logprobs: int = 5
 
     params_extra: LLMParams = LLMParams()
     extra_body: dict[str, Any] = {}
