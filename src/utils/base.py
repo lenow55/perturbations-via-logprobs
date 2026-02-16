@@ -7,7 +7,7 @@ from httpx import AsyncClient, Timeout
 from openai import AsyncOpenAI
 from pydantic import TypeAdapter
 
-from src.config import AppSettings, LLMConfig
+from src.config import AppSettings, ChatLLMConfig, EmbedLLMConfig
 from src.schemas import PromptLogprob
 
 logger = logging.getLogger(__name__)
@@ -19,7 +19,7 @@ def configure_logging(config: AppSettings):
         log_config_m.dictConfig(logging_config_dict)
 
 
-def create_openai_client(config: LLMConfig) -> AsyncOpenAI:
+def create_openai_client(config: ChatLLMConfig) -> AsyncOpenAI:
     if config.proxy_url:
         http_client = AsyncClient(proxy="socks5h://localhost:10808")
     else:
@@ -39,8 +39,7 @@ async def calculate_prompt_logprobs(
     query: str,
     client: AsyncOpenAI,
     semaphore: asyncio.Semaphore,
-    config: LLMConfig,
-    model: str,
+    config: ChatLLMConfig,
 ) -> tuple[str, list[None | dict[str, PromptLogprob]]]:
     """
     Отправляет запрос в LLM и возвращает сгенерированный ответ вместе с логпробами промпта.
@@ -75,7 +74,7 @@ async def calculate_prompt_logprobs(
         extra_body.update(config.extra_body)
 
         response = await client.chat.completions.create(
-            model=model,
+            model=config.model,
             messages=[{"role": "user", "content": query}],
             logprobs=True,
             top_logprobs=config.count_logprobs,  # Берем топ-k вариантов для расчета неопределенности
@@ -93,3 +92,44 @@ async def calculate_prompt_logprobs(
         raise RuntimeError("Can't compute without prompt logprobs")
     prompt_logprobs = ta.validate_python(response.model_extra["prompt_logprobs"])
     return answer, prompt_logprobs
+
+
+async def calculate_similarity(
+    idx: str,
+    reference: str,
+    answer: str,
+    client: AsyncOpenAI,
+    config: EmbedLLMConfig,
+) -> tuple[str, float]:
+    """
+    Отправляет запрос в LLM и возвращает сгенерированный ответ вместе с логпробами промпта.
+
+    Функция выполняет асинхронный вызов к API модели, запрашивая генерацию текста
+    и информацию о вероятностях (logprobs) для токенов входного промпта (топ-5 вариантов).
+    Для контроля конкурентности используется семафор.
+
+    Args:
+        idx (str): Уникальный идентификатор запроса (используется для логирования).
+        query (str): Пользовательский запрос (промпт) для отправки в модель.
+        client (AsyncOpenAI): Асинхронный клиент OpenAI.
+        semaphore (asyncio.Semaphore): Семафор для ограничения числа одновременных запросов.
+        config (LLMConfig): Конфигурация модели, содержащая дополнительные параметры
+            запроса (`extra_body` и `params_extra`).
+        model (str): Название используемой LLM модели (например, 'gpt-4o').
+
+    Returns:
+        tuple[str, list[None | dict[str, PromptLogprob]]]: Кортеж, состоящий из двух элементов:
+            - Строка со сгенерированным ответом модели.
+            - Список вероятностей (логпробов) для каждого токена исходного промпта.
+
+    """
+    logger.debug(f"Start request id {idx}")
+
+    response = await client.embeddings.create(
+        input=[reference],
+        model=config.model,
+        extra_body=config.extra_body,
+        **config.params_extra,
+    )
+
+    return idx, 0.0

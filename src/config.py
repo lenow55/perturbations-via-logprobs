@@ -18,22 +18,36 @@ class LLMParams(TypedDict):
     max_tokens: NotRequired[int]
 
 
+class EmbedParams(TypedDict):
+    dimensions: NotRequired[int]
+    user: NotRequired[str]
+
+
 class LLMConfig(BaseSettings):
+    model: str
     api_key: SecretStr = SecretStr(secret_value="EMPTY")
     base_url: str
     timeout: int = 50
     async_cals: int = 5
     proxy_url: str | None = None
-    count_logprobs: int = 5
-
-    params_extra: LLMParams = LLMParams()
     extra_body: dict[str, Any] = {}
+
+
+class ChatLLMConfig(LLMConfig):
+    count_logprobs: int = 5
+    params_extra: LLMParams = LLMParams()
+
+
+class EmbedLLMConfig(LLMConfig):
+    params_extra: EmbedParams = EmbedParams()
 
 
 class AppSettings(BaseSettings):
     logging_conf_file: str
 
-    llm: LLMConfig
+    llm: ChatLLMConfig
+    embed: ChatLLMConfig | None = None  # Опциональная конфигурация для модели эмбединга
+
     entropy_threshold: float = Field(
         default=0.8, description="Порог, выше которого токен считается 'неуверенным'"
     )

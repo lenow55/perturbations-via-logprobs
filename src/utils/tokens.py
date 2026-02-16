@@ -5,7 +5,7 @@ import numpy as np
 from openai import AsyncOpenAI
 from pydantic import TypeAdapter
 
-from src.config import LLMConfig
+from src.config import ChatLLMConfig
 from src.schemas import PromptLogprob, Scenario, ScenarioResult, TokenEntropy
 from src.utils.base import calculate_prompt_logprobs
 
@@ -43,7 +43,7 @@ async def analyze_prompt_entropy(
     scenario: Scenario,
     client: AsyncOpenAI,
     semaphore: asyncio.Semaphore,
-    config: LLMConfig,
+    config: ChatLLMConfig,
     model: str,
 ) -> tuple[str, ScenarioResult]:
     """

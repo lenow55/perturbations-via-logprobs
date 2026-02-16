@@ -126,9 +126,17 @@ class ReadingComprehensionItem(BaseModel):
 
 
 # INFO: контейнер для подготовленных данных
-
-
 class Check(TypedDict):
     question: str
     answer: str
     passage_id: int
+
+
+# INFO: контейнер для запроса в ллм
+class CheckLlmIn(Check):
+    check_id: int
+
+
+class CheckStage1Out(CheckLlmIn):
+    gen_answer: str
+    prompt_logprobs: list[None | dict[str, PromptLogprob]]

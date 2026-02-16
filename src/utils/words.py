@@ -5,7 +5,7 @@ import re
 from openai import AsyncOpenAI
 from pydantic import TypeAdapter
 
-from src.config import LLMConfig
+from src.config import ChatLLMConfig
 from src.schemas import (
     PromptLogprob,
     PtbScenario,
@@ -45,7 +45,7 @@ async def find_ptb_words(
     scenario: PtbScenario,
     client: AsyncOpenAI,
     semaphore: asyncio.Semaphore,
-    config: LLMConfig,
+    config: ChatLLMConfig,
     model: str,
 ) -> tuple[str, PtbScenarioRes]:
     """
