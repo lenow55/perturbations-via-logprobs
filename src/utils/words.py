@@ -63,7 +63,6 @@ async def find_ptb_words(
         client=client,
         semaphore=semaphore,
         config=config,
-        model=model,
     )
 
     entropy2token: list[TokenEntropy] = []

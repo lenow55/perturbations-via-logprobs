@@ -44,7 +44,6 @@ async def analyze_prompt_entropy(
     client: AsyncOpenAI,
     semaphore: asyncio.Semaphore,
     config: ChatLLMConfig,
-    model: str,
 ) -> tuple[str, ScenarioResult]:
     """
     Генерирует ответ и возвращает токены и их энтропию.
@@ -56,7 +55,6 @@ async def analyze_prompt_entropy(
         client=client,
         semaphore=semaphore,
         config=config,
-        model=model,
     )
 
     data: list[TokenEntropy] = []

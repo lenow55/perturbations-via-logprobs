@@ -79,7 +79,6 @@ async def main(args: Namespace):
                     },
                     client=client,
                     semaphore=semaphore,
-                    model=args.model,
                     config=config.llm,
                 )
             )

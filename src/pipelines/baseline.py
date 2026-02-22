@@ -44,7 +44,6 @@ async def stage_task(
         query=text,
         client=client,
         semaphore=semaphore,
-        model=config.llm.model,
         config=config.llm,
     )
     return CheckStage1Out()
