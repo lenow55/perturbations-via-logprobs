@@ -3,6 +3,7 @@ import json
 import logging
 from logging import config as log_config_m
 
+import torch
 from httpx import AsyncClient, Timeout
 from openai import AsyncOpenAI
 from pydantic import TypeAdapter
@@ -94,6 +95,10 @@ async def calculate_prompt_logprobs(
     return answer, prompt_logprobs
 
 
+def get_detailed_instruct(task_description: str, query: str) -> str:
+    return f"Instruct: {task_description}\nQuery:{query}"
+
+
 async def calculate_similarity(
     idx: str,
     reference: str,
@@ -101,14 +106,28 @@ async def calculate_similarity(
     client: AsyncOpenAI,
     config: EmbedLLMConfig,
 ) -> tuple[str, float]:
-    """ """
+    """
+    Подсчитывает близость ответа ллм к эталону
+    """
     logger.debug(f"Start request id {idx}")
 
+    reference_i = get_detailed_instruct(
+        task_description="Это эталонный ответ. С ним сравнивают предполагаемый ответ для получения оценки правильности.",
+        query=reference,
+    )
+    answer_i = get_detailed_instruct(
+        task_description="Это предполагаемый ответ. Его сравнивают с эталонным ответом для получения оценки правильности.",
+        query=answer,
+    )
+
     response = await client.embeddings.create(
-        input=[reference],
+        input=[answer_i, reference_i],
         model=config.model,
         extra_body=config.extra_body,
         **config.params_extra,
     )
+    embeddings = torch.tensor([o.embedding for o in response.data])
+    scores = embeddings[:1] @ embeddings[1:].T
+    score: float = scores.tolist()[0][0]
 
-    return idx, 0.0
+    return idx, score

@@ -13,6 +13,7 @@ dependencies = [
   "pandas (>=2.3.3,<3.0.0)",
   "pandas-stubs (>=2.3.3.251219,<3.0.0.0)",
   "pydantic-settings (>=2.12.0,<3.0.0)",
+  "torch (>=2.10.0,<3.0.0)",
 ]
 
 
@@ -23,5 +24,13 @@ build-backend = "poetry.core.masonry.api"
 [tool.poetry]
 packages = [{ include = "src" }]
 
+[[tool.poetry.source]]
+name = "pytorch_cpu"
+url = "https://download.pytorch.org/whl/cpu"
+priority = "explicit"
+
+
+[tool.poetry.dependencies]
+torch = {source = "pytorch_cpu"}
 [dependency-groups]
 dev = ["ipykernel (>=7.1.0,<8.0.0)", "nbformat (>=5.10.4,<6.0.0)"]
