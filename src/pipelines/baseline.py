@@ -8,11 +8,12 @@ from argparse import Namespace
 import pandas as pd
 from openai import AsyncOpenAI
 
-from src.config import AppSettings, ChatLLMConfig
+from src.config import AppSettings, ChatLLMConfig, EmbedLLMConfig
 from src.params import parser
 from src.schemas import CheckLlmIn, CheckStage1Out
 from src.utils.base import (
     calculate_prompt_logprobs,
+    calculate_similarity,
     configure_logging,
     create_openai_client,
 )
@@ -35,7 +36,6 @@ async def stage_task(
         logger.critical("Cant run without embed config")
         raise RuntimeError("bad config")
 
-    # INFO: 1. получаем сгенерированный ответ и промпт пробы
     text = (
         "context: " + passages[check["passage_id"]] + "\nquestion: " + check["question"]
     )
@@ -46,7 +46,23 @@ async def stage_task(
         semaphore=semaphore,
         config=config.llm,
     )
-    return CheckStage1Out()
+
+    if not isinstance(config.embed, EmbedLLMConfig):
+        raise ValueError("Configuration for embeding model not found")
+
+    _, score = await calculate_similarity(
+        idx=str(check["check_id"]),
+        reference=check["answer"],
+        answer=answer,
+        client=client_embed,
+        config=config.embed,
+    )
+    return CheckStage1Out(
+        gen_answer=answer,
+        prompt_logprobs=prompt_logprobs,
+        similarity=score,
+        **check,
+    )
 
 
 async def main(args: Namespace):

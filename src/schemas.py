@@ -140,3 +140,4 @@ class CheckLlmIn(Check):
 class CheckStage1Out(CheckLlmIn):
     gen_answer: str
     prompt_logprobs: list[None | dict[str, PromptLogprob]]
+    similarity: float

@@ -109,7 +109,7 @@ async def calculate_similarity(
     """
     Подсчитывает близость ответа ллм к эталону
     """
-    logger.debug(f"Start request id {idx}")
+    logger.debug(f"Start Embed request id {idx}")
 
     reference_i = get_detailed_instruct(
         task_description="Это эталонный ответ. С ним сравнивают предполагаемый ответ для получения оценки правильности.",
