@@ -117,6 +117,10 @@ async def main(args: Namespace):
         )
     results = await asyncio.gather(*tasks)
 
+    df = pd.DataFrame.from_records(data=results, index="check_id")
+    df.to_csv(args.output, quoting=csv.QUOTE_NONNUMERIC)
+    logger.info(f"Stage1 results saved into {args.output} file; shape: {df.shape}")
+
 
 if __name__ == "__main__":
     _ = parser.add_argument(
