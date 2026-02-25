@@ -1,4 +1,3 @@
-import argparse
 import csv
 import json
 import logging
@@ -10,6 +9,7 @@ from numpy.random import RandomState
 from pydantic import TypeAdapter
 
 from src.config import AppSettings
+from src.params import parser
 from src.schemas import Check, ReadingComprehensionItem
 from src.utils.base import configure_logging
 
@@ -82,7 +82,6 @@ def main(args: Namespace):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
     _ = parser.add_argument(
         "-i",
         "--input",
@@ -112,13 +111,5 @@ if __name__ == "__main__":
         required=False,
         help="Seed для выборки элементов",
         default=42,
-    )
-    _ = parser.add_argument(
-        "-c",
-        "--config",
-        type=str,
-        required=False,
-        default="./congig.json",
-        help="Путь до файла с конфигурацией",
     )
     main(parser.parse_args())

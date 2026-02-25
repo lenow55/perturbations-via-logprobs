@@ -130,4 +130,11 @@ if __name__ == "__main__":
         required=True,
         help="Путь до директории с датасетом",
     )
+    _ = parser.add_argument(
+        "-o",
+        "--output",
+        type=str,
+        required=True,
+        help="Путь до csv файла с пробами и ответами",
+    )
     asyncio.run(main(parser.parse_args()))
