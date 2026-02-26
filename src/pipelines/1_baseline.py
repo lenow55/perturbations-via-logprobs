@@ -8,7 +8,7 @@ from argparse import Namespace
 import pandas as pd
 from openai import AsyncOpenAI
 
-from src.config import AppSettings, ChatLLMConfig, EmbedLLMConfig
+from src.config import AppSettings, ChatLLMConfig, EmbedLLMConfig, MetadataFileInfo
 from src.params import parser
 from src.schemas import CheckLlmIn, CheckStage1Out
 from src.utils.base import (
@@ -65,7 +65,7 @@ async def stage_task(
 async def main(args: Namespace):
     if not isinstance(args.input, str):
         raise RuntimeError("Bad argument for input folder")
-    if not isinstance(args.output, str):
+    if not isinstance(args.out_folder, str):
         raise RuntimeError("Bad argument for report value")
     if not isinstance(args.config, str):
         raise RuntimeError("Bad argument for config path value")
@@ -74,6 +74,17 @@ async def main(args: Namespace):
         config = AppSettings.model_validate_json(f.read())
 
     configure_logging(config=config)
+
+    meta_file = os.path.join(args.out_folder, "meta.json")
+    if not os.path.isdir(args.out_folder):
+        logger.warning(f"Try create out_folder {args.out_folder}")
+        os.mkdir(args.out_folder)
+    else:
+        if os.path.exists(meta_file):
+            logger.error(f"Metadata file {meta_file} exists in target dir: ABORT!!!")
+            return
+        else:
+            logger.info("Empty dir already exists")
 
     in_passages = os.path.join(args.input, "passages.json")
     in_checks = os.path.join(args.input, "checks.csv")
@@ -114,9 +125,32 @@ async def main(args: Namespace):
         )
     results = await asyncio.gather(*tasks)
 
-    df = pd.DataFrame.from_records(data=results, index="check_id")
-    df.to_csv(args.output, quoting=csv.QUOTE_NONNUMERIC)
-    logger.info(f"Stage1 results saved into {args.output} file; shape: {df.shape}")
+    meta_info = MetadataFileInfo(**config.model_dump(mode="python"))
+    with open(meta_file, "w") as f:
+        _ = f.write(meta_info.model_dump_json(indent=2, exclude={"api_key"}))
+
+    logger.info(f"Stage1 metadata saved into {meta_file} file")
+
+    out_main = os.path.join(args.out_folder, "checks.csv")
+    df = pd.DataFrame.from_records(
+        data=results,
+        index="check_id",
+        exclude=["prompt_logprobs", "gen_answer"],
+    )
+    df.to_csv(out_main, quoting=csv.QUOTE_NONNUMERIC)
+    logger.info(f"Stage1 results saved into {out_main} file; shape: {df.shape}")
+
+    out_logprobs = os.path.join(args.out_folder, "gen_logprobs.csv")
+    df_p = pd.DataFrame.from_records(
+        data=results,
+        index="check_id",
+        exclude=["question", "answer", "passage_id", "similarity"],
+    )
+    df_p.to_csv(out_logprobs, quoting=csv.QUOTE_NONNUMERIC)
+
+    logger.info(
+        f"Stage1 prompt_logprobs saved into {out_logprobs} file; shape: {df.shape}"
+    )
 
 
 if __name__ == "__main__":
@@ -129,9 +163,9 @@ if __name__ == "__main__":
     )
     _ = parser.add_argument(
         "-o",
-        "--output",
+        "--out-folder",
         type=str,
         required=True,
-        help="Путь до csv файла с пробами и ответами",
+        help="Путь до директории с пробами и ответами",
     )
     asyncio.run(main(parser.parse_args()))

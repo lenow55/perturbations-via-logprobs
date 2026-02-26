@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Any, ClassVar, NotRequired, TypedDict
 from pydantic import Field, SecretStr
 from pydantic_settings import (
@@ -80,3 +81,7 @@ class AppSettings(BaseSettings):
             dotenv_settings,
             file_secret_settings,
         )
+
+
+class MetadataFileInfo(AppSettings):
+    date: datetime = datetime.now()
