@@ -32,7 +32,7 @@ async def stage_task(
     semaphore: asyncio.Semaphore,
     config: AppSettings,
 ):
-    if not isinstance(config.embed, ChatLLMConfig):
+    if not isinstance(config.embed, EmbedLLMConfig):
         logger.critical("Cant run without embed config")
         raise RuntimeError("bad config")
 
@@ -46,9 +46,6 @@ async def stage_task(
         semaphore=semaphore,
         config=config.llm,
     )
-
-    if not isinstance(config.embed, EmbedLLMConfig):
-        raise ValueError("Configuration for embeding model not found")
 
     _, score = await calculate_similarity(
         idx=str(check["check_id"]),
@@ -87,7 +84,7 @@ async def main(args: Namespace):
     logger.info(f"Checks readed from {in_checks} shape: {checks_df.shape}")
 
     client = create_openai_client(config=config.llm)
-    if not isinstance(config.embed, ChatLLMConfig):
+    if not isinstance(config.embed, EmbedLLMConfig):
         logger.critical("Cant run without embed config")
         return
 

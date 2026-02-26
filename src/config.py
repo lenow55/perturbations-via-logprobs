@@ -46,7 +46,9 @@ class AppSettings(BaseSettings):
     logging_conf_file: str
 
     llm: ChatLLMConfig
-    embed: ChatLLMConfig | None = None  # Опциональная конфигурация для модели эмбединга
+    embed: EmbedLLMConfig | None = (
+        None  # Опциональная конфигурация для модели эмбединга
+    )
 
     entropy_threshold: float = Field(
         default=0.8, description="Порог, выше которого токен считается 'неуверенным'"
