@@ -30,11 +30,16 @@ def main(args: Namespace):
         raise RuntimeError("Bad argument for out_folder value")
     if not isinstance(args.config, str):
         raise RuntimeError("Bad argument for config path value")
+    if not isinstance(args.verdict, int):
+        raise RuntimeError("Bad argument for verdict value")
+
+    verdict = args.verdict
 
     with open(args.config, "r") as f:
         config = AppSettings.model_validate_json(f.read())
 
     configure_logging(config=config)
+    logger.info(f"Verdict type: {verdict}")
 
     df = pd.read_json(args.input, lines=True)
     small_df = df.sample(n=args.samples, random_state=RandomState(seed=args.seed))
@@ -52,7 +57,7 @@ def main(args: Namespace):
         id2passage.update({str(item.idx): item.passage.text.strip(' "')})
         for question in item.passage.questions:
             for answer in question.answers:
-                if answer.label == 1:
+                if answer.label == verdict:
                     id2check.update(
                         {
                             answer.idx: {
@@ -111,5 +116,13 @@ if __name__ == "__main__":
         required=False,
         help="Seed для выборки элементов",
         default=42,
+    )
+    _ = parser.add_argument(
+        "-v",
+        "--verdict",
+        type=int,
+        required=False,
+        help="1 - правильный ответ, 0 - неправильный ответ",
+        default=1,
     )
     main(parser.parse_args())
