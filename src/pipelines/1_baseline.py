@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 
 async def stage_task(
     check: CheckLlmIn,
-    passages: dict[int, str],
+    passages: dict[str, str],
     client: AsyncOpenAI,
     client_embed: AsyncOpenAI,
     semaphore: asyncio.Semaphore,
@@ -103,9 +103,9 @@ async def main(args: Namespace):
                 stage_task(
                     check={
                         "check_id": idx,
-                        "answer": row["answer"],
-                        "passage_id": row["passage_id"],
-                        "question": row["question"],
+                        "answer": str(row["answer"]),
+                        "passage_id": str(int(row["passage_id"])),
+                        "question": str(row["question"]),
                     },
                     passages=passages,
                     client=client,

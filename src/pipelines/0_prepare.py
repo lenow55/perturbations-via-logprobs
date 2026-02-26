@@ -44,12 +44,12 @@ def main(args: Namespace):
     ta = TypeAdapter(list[ReadingComprehensionItem])
     items = ta.validate_python(small_list)
 
-    id2passage: dict[int, str] = {}
+    id2passage: dict[str, str] = {}
     id2check: dict[int, Check] = {}
 
     logger.info(f"Read {len(items)} from source file")
     for item in items:
-        id2passage.update({item.idx: item.passage.text.strip(' "')})
+        id2passage.update({str(item.idx): item.passage.text.strip(' "')})
         for question in item.passage.questions:
             for answer in question.answers:
                 if answer.label == 1:
@@ -58,7 +58,7 @@ def main(args: Namespace):
                             answer.idx: {
                                 "question": question.question.strip(' "'),
                                 "answer": answer.text.strip(' "'),
-                                "passage_id": item.idx,
+                                "passage_id": str(item.idx),
                             }
                         }
                     )

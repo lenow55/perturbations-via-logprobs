@@ -129,7 +129,7 @@ class ReadingComprehensionItem(BaseModel):
 class Check(TypedDict):
     question: str
     answer: str
-    passage_id: int
+    passage_id: str
 
 
 # INFO: контейнер для запроса в ллм
