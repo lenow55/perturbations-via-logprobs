@@ -96,8 +96,7 @@ async def calculate_prompt_logprobs(
 
 
 def get_detailed_instruct(task_description: str, query: str) -> str:
-    # return f"Instruct: {task_description}\nQuery:{query}"
-    return query
+    return f"Instruct: {task_description}\nQuery:{query}"
 
 
 async def calculate_similarity(
