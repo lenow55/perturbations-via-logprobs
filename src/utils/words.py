@@ -40,13 +40,18 @@ def get_words_and_indices(text: str) -> list[WordInfo]:
     return results
 
 
+def mean_entropy(tokens_entropies: list[float], count_logprobs: int):
+    word_entropy = float(sum(tokens_entropies))
+    n_word_entropy = word_entropy / len(tokens_entropies)
+    return n_word_entropy
+
+
 async def find_ptb_words(
     idx: str,
     scenario: PtbScenario,
     client: AsyncOpenAI,
     semaphore: asyncio.Semaphore,
     config: ChatLLMConfig,
-    model: str,
 ) -> tuple[str, PtbScenarioRes]:
     """
     Отсылает запрос в ллм.
@@ -115,12 +120,12 @@ async def find_ptb_words(
         )
 
         # вычисляем энтропию и нормализуем
-        word_entropy = float(
-            sum([entropy2token[i]["entropy"] for i in matched_token_indices])
+        tokens_entropies = [entropy2token[i]["entropy"] for i in matched_token_indices]
+        word_entropy = mean_entropy(
+            tokens_entropies=tokens_entropies, count_logprobs=config.count_logprobs
         )
-        n_word_entropy = word_entropy / len(matched_token_indices)
 
-        res_words.append(WordInfoRes(entropy=n_word_entropy, **word))
+        res_words.append(WordInfoRes(entropy=word_entropy, **word))
 
     result = PtbScenarioRes(
         words=res_words, answer=answer, logprobs=entropy2token, **scenario.copy()
