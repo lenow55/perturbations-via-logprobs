@@ -24,6 +24,10 @@ class WordInfoRes(WordInfo):
     entropy: float
 
 
+class WordImportance(WordInfo):
+    importance: float
+
+
 # INFO: Контейнеры для хранения сценариев запросов
 class Scenario(TypedDict):
     text: str
