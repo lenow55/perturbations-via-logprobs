@@ -1,5 +1,6 @@
 import asyncio
 import csv
+from functools import partial
 import json
 import logging
 import os
@@ -10,7 +11,7 @@ from openai import AsyncOpenAI
 
 from src.config import AppSettings, ChatLLMConfig, EmbedLLMConfig, MetadataFileInfo
 from src.params import parser
-from src.schemas import CheckLlmIn, CheckStage1Out
+from src.schemas import CheckLlmIn, CheckStage1Out, TA_logprob_list
 from src.utils.base import (
     calculate_prompt_logprobs,
     calculate_similarity,
@@ -147,6 +148,9 @@ async def main(args: Namespace):
         index="check_id",
         exclude=["question", "answer", "passage_id", "similarity"],
     )
+    ta_func = partial(TA_logprob_list.dump_python, mode="json")
+    ta_func_json = partial(json.dumps, ensure_ascii=False)
+    df_p["prompt_logprobs"] = df_p["prompt_logprobs"].map(ta_func).map(ta_func_json)
     df_p.to_csv(out_logprobs, quoting=csv.QUOTE_NONNUMERIC)
 
     logger.info(
