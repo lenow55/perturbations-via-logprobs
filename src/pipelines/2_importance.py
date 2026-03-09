@@ -1,5 +1,6 @@
 import asyncio
 import csv
+import json
 import logging
 import os
 from argparse import Namespace
@@ -71,17 +72,25 @@ def main(args: Namespace):
 
     in_checks = os.path.join(args.stage, "checks.csv")
     in_logprobs = os.path.join(args.stage, "gen_logprobs.csv")
+    in_passages = os.path.join(args.input, "passages.json")
+
+    # файлик с контекстами
+    with open(in_passages, "r") as f:
+        passages = json.load(f)
+    logger.info(f"Readed {in_passages} passages {len(passages)}")
 
     # датасет с колонками
     # ["question", "answer", "passage_id", "similarity"]
     # индекс "check_id"
     checks_df = pd.read_csv(in_checks, quoting=csv.QUOTE_NONNUMERIC, index_col=0)
+    checks_df.index = checks_df.index.astype(int)
     logger.info(f"Checks readed from {in_checks} shape: {checks_df.shape}")
 
     # датасет с колонками
     # ["prompt_logprobs", "gen_answer"]
     # индекс "check_id"
     logprobs_df = pd.read_csv(in_logprobs, quoting=csv.QUOTE_NONNUMERIC, index_col=0)
+    logprobs_df.index = logprobs_df.index.astype(int)
     logger.info(
         f"Logprobs dataset readed from {in_logprobs} shape: {logprobs_df.shape}"
     )
