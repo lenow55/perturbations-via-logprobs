@@ -91,7 +91,8 @@ async def main(args: Namespace):
     with open(in_passages, "r") as f:
         passages = json.load(f)
     logger.info(f"Readed {in_passages} passages {len(passages)}")
-    checks_df = pd.read_csv(in_checks, quoting=csv.QUOTE_NONNUMERIC)
+    checks_df = pd.read_csv(in_checks, quoting=csv.QUOTE_NONNUMERIC, index_col=0)
+    checks_df.index = checks_df.index.astype(int)
     logger.info(f"Checks readed from {in_checks} shape: {checks_df.shape}")
 
     client = create_openai_client(config=config.llm)
