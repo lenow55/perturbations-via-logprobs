@@ -4,7 +4,7 @@ version = "0.1.0"
 description = ""
 authors = [{ name = "Новиков Илья", email = "nov.ilucha@yandex.ru" }]
 readme = "README.md"
-requires-python = ">=3.11,<3.13"
+requires-python = ">=3.11,<3.14"
 dependencies = [
   "openai (>=2.14.0,<3.0.0)",
   "plotly (>=6.5.0,<7.0.0)",
@@ -33,6 +33,6 @@ priority = "explicit"
 
 
 [tool.poetry.dependencies]
-torch = {source = "pytorch_cpu"}
+torch = { source = "pytorch_cpu" }
 [dependency-groups]
 dev = ["ipykernel (>=7.1.0,<8.0.0)", "nbformat (>=5.10.4,<6.0.0)"]
