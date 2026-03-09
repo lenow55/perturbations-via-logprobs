@@ -1,7 +1,7 @@
 from typing import Protocol
 
 
-class EntropyFuncSignature(Protocol):
+class WordEntropyFuncSignature(Protocol):
     def __call__(
         self,
         *,
@@ -24,7 +24,7 @@ def first_entropy(tokens_entropies: list[float], count_logprobs: int):
         return 0.0
 
 
-HUB: dict[str, EntropyFuncSignature] = {
+WORD_HUB: dict[str, WordEntropyFuncSignature] = {
     "mean": mean_entropy,
     "first": first_entropy,
 }
