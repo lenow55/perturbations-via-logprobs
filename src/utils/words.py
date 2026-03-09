@@ -16,8 +16,8 @@ from src.schemas import (
     WordInfoRes,
 )
 from src.utils.base import calculate_prompt_logprobs
-from src.utils.metrics_hub import mean_entropy
-from src.utils.tokens import calculate_token_entropy
+from src.metrics.words import mean_entropy
+from src.metrics.tokens import calculate_token_entropy
 
 logger = logging.getLogger(__name__)
 

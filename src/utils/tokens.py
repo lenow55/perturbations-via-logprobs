@@ -1,41 +1,14 @@
 import asyncio
 import logging
 
-import numpy as np
 from openai import AsyncOpenAI
-from pydantic import TypeAdapter
 
 from src.config import ChatLLMConfig
+from src.metrics.tokens import calculate_token_entropy
 from src.schemas import PromptLogprob, Scenario, ScenarioResult, TokenEntropy
 from src.utils.base import calculate_prompt_logprobs
 
 logger = logging.getLogger(__name__)
-
-
-def calculate_token_entropy(top_logprobs: list[PromptLogprob]) -> float:
-    """
-    Рассчитывает энтропию Шеннона (в битах) на основе Top-K logprobs.
-    Формула: H = - sum(p * log2(p))
-    """
-    probs: list[float] = []
-    for item in top_logprobs:
-        # OpenAI возвращает logprob (натуральный логарифм), конвертируем в вероятность
-        p = np.exp(item.logprob)
-        probs.append(p)
-
-    probs_arr = np.array(probs, dtype=float)
-
-    # Нормализуем вероятности, так как у нас только Top-K, а не полный словарь
-    # Это дает аппроксимацию энтропии
-    probs_norm = probs_arr / np.sum(probs_arr)
-
-    # Считаем энтропию
-    entropy = -np.sum(
-        probs_norm * np.log2(probs_norm + 1e-9)
-    )  # +1e-9 для защиты от log(0)
-    if not isinstance(entropy, float):
-        raise RuntimeError(f"Bad result type {type(entropy)}")
-    return entropy
 
 
 async def analyze_prompt_entropy(

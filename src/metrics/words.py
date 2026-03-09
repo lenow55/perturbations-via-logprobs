@@ -1,7 +1,8 @@
-from typing import Protocol
+from typing import Protocol, runtime_checkable
 
 
-class WordEntropyFuncSignature(Protocol):
+@runtime_checkable
+class WordMetricSignature(Protocol):
     def __call__(
         self,
         *,
@@ -24,7 +25,7 @@ def first_entropy(tokens_entropies: list[float], count_logprobs: int):
         return 0.0
 
 
-WORD_HUB: dict[str, WordEntropyFuncSignature] = {
+WORD_HUB: dict[str, WordMetricSignature] = {
     "mean": mean_entropy,
     "first": first_entropy,
 }
