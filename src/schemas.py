@@ -1,6 +1,6 @@
 from typing import NotRequired, TypedDict
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, TypeAdapter
 
 
 # INFO: Контейнеры для хранения логпробов
@@ -135,6 +135,9 @@ class Check(TypedDict):
 # INFO: контейнер для запроса в ллм
 class CheckLlmIn(Check):
     check_id: int
+
+
+TA_logprob_list = TypeAdapter(list[None | dict[str, PromptLogprob]])
 
 
 class CheckStage1Out(CheckLlmIn):
