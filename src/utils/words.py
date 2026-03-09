@@ -1,9 +1,10 @@
 import asyncio
 import logging
 import re
+import unicodedata
+from difflib import SequenceMatcher
 
 from openai import AsyncOpenAI
-from pydantic import TypeAdapter
 
 from src.config import ChatLLMConfig
 from src.schemas import (
@@ -19,6 +20,56 @@ from src.utils.metrics_hub import mean_entropy
 from src.utils.tokens import calculate_token_entropy
 
 logger = logging.getLogger(__name__)
+
+
+def normalize_text(text: str) -> str:
+    """Нормализует текст для более точного сравнения токенов и слов."""
+    # Нормализация Unicode (приводит к единому представлению)
+    text = unicodedata.normalize("NFKC", text)
+    # Можно добавить дополнительные нормализации при необходимости
+    return text
+
+
+def fuzzy_find(needle: str, haystack: str, start_pos: int = 0) -> int | None:
+    """
+    Нечёткий поиск подстроки в строке.
+    Возвращает позицию начала наиболее похожего участка или None.
+    """
+    if not needle or not haystack:
+        return None
+
+    # Пробуем точный поиск сначала
+    try:
+        return haystack.index(needle, start_pos)
+    except ValueError:
+        pass
+
+    # Нечёткий поиск: ищем максимально похожий участок
+    best_ratio = 0.0
+    best_pos = None
+    needle_len = len(needle)
+
+    # Ищем только в разумной окрестности (±50% длины)
+    search_len = int(needle_len * 1.5)
+
+    for i in range(
+        start_pos, min(len(haystack) - needle_len + 1, start_pos + search_len)
+    ):
+        substring = haystack[i : i + needle_len]
+        ratio = SequenceMatcher(None, needle, substring).ratio()
+
+        if ratio > best_ratio:
+            best_ratio = ratio
+            best_pos = i
+
+    # Возвращаем позицию только если сходство достаточное (>0.8)
+    if best_ratio > 0.8:
+        logger.debug(
+            f"Нечёткое совпадение для '{needle}': ratio={best_ratio:.2f}, pos={best_pos}"
+        )
+        return best_pos
+
+    return None
 
 
 def get_words_and_indices(text: str) -> list[WordInfo]:
@@ -93,20 +144,46 @@ async def find_ptb_words(
 
     prompt_buffer_c = prompt_buffer[start_i:end_i]
     prompt_tokens_map_c = prompt_tokens_map[start_i:end_i]
+
+    # Нормализуем оба текста для сравнения
+    original_context_normalized = normalize_text(scenario["context"])
+    prompt_buffer_c_normalized = normalize_text(prompt_buffer_c)
+
+    # Проверяем соответствие текстов
+    if original_context_normalized != prompt_buffer_c_normalized:
+        logger.warning(
+            f"""
+Расхождение между исходным контекстом и токенизированным:\n
+Исходный: {scenario["context"][:100]}...\n
+Токенизированный: {prompt_buffer_c[:100]}..."""
+        )
+
     res_words: list[WordInfoRes] = []
-
     current_pos = 0
-    for word in words_infos:
-        try:
-            start_idx = prompt_buffer_c.index(word["word"], current_pos)
-        except ValueError:
-            logger.warning(
-                f"Слово '{word}' не найдено в тексте токенов начиная с позиции {current_pos}."
-            )
-            res_words.append(WordInfoRes(entropy=0.0, **word))
-            continue
 
-        end_idx = start_idx + len(word["word"])
+    for word in words_infos:
+        word_text = word["word"]
+        word_normalized = normalize_text(word_text)
+
+        # Пробуем точный поиск
+        start_idx = None
+        try:
+            start_idx = prompt_buffer_c.index(word_text, current_pos)
+        except ValueError:
+            # Пробуем нечёткий поиск
+            start_idx = fuzzy_find(word_text, prompt_buffer_c, current_pos)
+
+            if start_idx is None:
+                logger.warning(
+                    f"Слово '{word_text}' не найдено в тексте токенов начиная с позиции {current_pos}. "
+                )
+                logger.warning(
+                    f"Контекст: ...{prompt_buffer_c[max(0, current_pos - 20) : current_pos + 50]}..."
+                )
+                res_words.append(WordInfoRes(entropy=0.0, **word))
+                continue
+
+        end_idx = start_idx + len(word_text)
 
         # Собираем все уникальные токены, которые попали в диапазон слова
         # Используем set для уникальности, затем сортируем
@@ -114,13 +191,16 @@ async def find_ptb_words(
             list(set(prompt_tokens_map_c[start_idx:end_idx]))
         )
 
-        # вычисляем энтропию и нормализуем
+        # Вычисляем энтропию и нормализуем
         tokens_entropies = [entropy2token[i]["entropy"] for i in matched_token_indices]
         word_entropy = mean_entropy(
             tokens_entropies=tokens_entropies, count_logprobs=config.count_logprobs
         )
 
         res_words.append(WordInfoRes(entropy=word_entropy, **word))
+
+        # ВАЖНО: обновляем позицию для следующего поиска
+        current_pos = end_idx
 
     result = PtbScenarioRes(
         words=res_words, answer=answer, logprobs=entropy2token, **scenario.copy()
