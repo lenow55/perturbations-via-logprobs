@@ -15,6 +15,7 @@ from src.schemas import (
     WordInfoRes,
 )
 from src.utils.base import calculate_prompt_logprobs
+from src.utils.metrics_hub import mean_entropy
 from src.utils.tokens import calculate_token_entropy
 
 logger = logging.getLogger(__name__)
@@ -38,12 +39,6 @@ def get_words_and_indices(text: str) -> list[WordInfo]:
         )
 
     return results
-
-
-def mean_entropy(tokens_entropies: list[float], count_logprobs: int):
-    word_entropy = float(sum(tokens_entropies))
-    n_word_entropy = word_entropy / len(tokens_entropies)
-    return n_word_entropy
 
 
 async def find_ptb_words(
