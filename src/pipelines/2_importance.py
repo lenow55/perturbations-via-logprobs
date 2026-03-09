@@ -16,7 +16,7 @@ from src.schemas import CheckLlmIn
 from src.utils.base import (
     configure_logging,
 )
-from src.utils.metrics_hub import HUB
+from src.utils.metrics_hub import WORD_HUB
 
 logger = logging.getLogger(__name__)
 
@@ -51,7 +51,7 @@ def main(args: Namespace):
         raise RuntimeError("Bad argument for config path value")
     if not isinstance(args.metric, str):
         raise RuntimeError("Bad metric value")
-    if args.metric not in HUB:
+    if args.metric not in WORD_HUB:
         raise RuntimeError(f"Metric '{args.metric}' not in HUB")
 
     with open(args.config, "r") as f:
