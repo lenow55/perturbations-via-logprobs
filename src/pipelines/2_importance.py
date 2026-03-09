@@ -11,12 +11,12 @@ from openai import AsyncOpenAI
 from pydantic import BaseModel
 
 from src.config import AppSettings
+from src.metrics import WORD_HUB
 from src.params import parser
 from src.schemas import CheckLlmIn
 from src.utils.base import (
     configure_logging,
 )
-from src.utils.metrics_hub import WORD_HUB
 
 logger = logging.getLogger(__name__)
 
