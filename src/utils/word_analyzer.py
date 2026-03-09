@@ -7,6 +7,7 @@ from src.metrics import (
     TokenMetricSignature,
     WordMetricSignature,
 )
+from src.schemas import PromptLogprob, TokenImportance
 
 logger = logging.getLogger(__name__)
 
@@ -22,6 +23,24 @@ class WordAnalyzer:
     ):
         self._token_metric_func = token_metric_func
         self._word_metric_func = word_metric_func
+
+    def tokens_importances(
+        self, prompt_logprobs: list[dict[str, PromptLogprob] | None]
+    ) -> list[TokenImportance]:
+        data: list[TokenImportance] = []
+        for forward in prompt_logprobs:
+            if not isinstance(forward, dict):
+                continue
+            logprobs: list[PromptLogprob] = []
+            token_str = None
+            for _, logprob in forward.items():
+                logprobs.append(logprob)
+                if not isinstance(token_str, str):
+                    token_str = logprob.decoded_token
+
+            importance = self._token_metric_func(top_logprobs=logprobs)
+            data.append({"token": str(token_str), "importance": importance})
+        return data
 
 
 class WordAnalyzerBuilder:

@@ -4,6 +4,11 @@ from pydantic import BaseModel, Field, TypeAdapter
 
 
 # INFO: Контейнеры для хранения логпробов
+class TokenImportance(TypedDict):
+    token: str
+    importance: float
+
+
 class TokenEntropy(TypedDict):
     token: str
     entropy: float
