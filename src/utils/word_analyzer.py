@@ -7,7 +7,8 @@ from src.metrics import (
     TokenMetricSignature,
     WordMetricSignature,
 )
-from src.schemas import PromptLogprob, TokenImportance, WordImportance
+from src.schemas import PromptLogprob, TokenImportance, WordImportance, WordInfo
+from src.utils.words import get_words_and_indices, normalize_text
 
 logger = logging.getLogger(__name__)
 
@@ -49,6 +50,60 @@ class WordAnalyzer:
     ) -> list[WordImportance]:
 
         data: list[WordImportance] = []
+        prompt_buffer: str = ""  # буфер текста
+        prompt_tokens_map: list[int] = []  # мапинг текста на id токена
+        words_infos: list[WordInfo] = get_words_and_indices(passage)
+
+        counter = 0
+        for token_d in tokens_importances:
+            prompt_buffer = prompt_buffer + token_d["token"]
+            prompt_tokens_map.extend([counter] * len(token_d["token"]))
+            counter += 1
+
+        # INFO: обрезаем всё кроме контекста
+        start_i = prompt_buffer.find("context: ") + 9
+        end_i = prompt_buffer.find("question: ")
+
+        prompt_buffer_c = prompt_buffer[start_i:end_i]
+        prompt_tokens_map_c = prompt_tokens_map[start_i:end_i]
+
+        current_pos = 0
+
+        for word in words_infos:
+            word_text = word["word"]
+
+            # Пробуем точный поиск
+            start_idx = None
+            try:
+                start_idx = prompt_buffer_c.index(word_text, current_pos)
+            except ValueError:
+                logger.warning(
+                    f"Слово '{word}' не найдено в тексте токенов начиная с позиции {current_pos}."
+                )
+                data.append(WordImportance(importance=0.0, **word))
+                continue
+
+            end_idx = start_idx + len(word_text)
+
+            # Собираем все уникальные токены, которые попали в диапазон слова
+            # Используем set для уникальности, затем сортируем
+            matched_token_indices = sorted(
+                list(set(prompt_tokens_map_c[start_idx:end_idx]))
+            )
+
+            # Вычисляем энтропию и нормализуем
+            tokens_metrics = [
+                tokens_importances[i]["importance"] for i in matched_token_indices
+            ]
+            word_importance = self._word_metric_func(
+                tokens_entropies=tokens_metrics, count_logprobs=len(tokens_metrics)
+            )
+
+            data.append(WordImportance(importance=word_importance, **word))
+
+            # ВАЖНО: обновляем позицию для следующего поиска
+            current_pos = end_idx
+
         return data
 
 
