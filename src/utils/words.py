@@ -145,20 +145,6 @@ async def find_ptb_words(
     prompt_buffer_c = prompt_buffer[start_i:end_i]
     prompt_tokens_map_c = prompt_tokens_map[start_i:end_i]
 
-    # Нормализуем оба текста для сравнения
-    original_context_normalized = normalize_text(scenario["context"])
-    prompt_buffer_c_normalized = normalize_text(prompt_buffer_c)
-
-    # Проверяем соответствие текстов
-    if original_context_normalized != prompt_buffer_c_normalized:
-        logger.warning(
-            f"""
-Расхождение между исходным контекстом и токенизированным:\n
-Исходный: {scenario["context"][:100]}...\n
-Токенизированный: {prompt_buffer_c[:100]}..."""
-        )
-
-    res_words: list[WordInfoRes] = []
     current_pos = 0
 
     for word in words_infos:
@@ -170,20 +156,13 @@ async def find_ptb_words(
         try:
             start_idx = prompt_buffer_c.index(word_text, current_pos)
         except ValueError:
-            # Пробуем нечёткий поиск
-            start_idx = fuzzy_find(word_text, prompt_buffer_c, current_pos)
+            logger.warning(
+                f"Слово '{word}' не найдено в тексте токенов начиная с позиции {current_pos}."
+            )
+            res_words.append(WordInfoRes(entropy=0.0, **word))
+            continue
 
-            if start_idx is None:
-                logger.warning(
-                    f"Слово '{word_text}' не найдено в тексте токенов начиная с позиции {current_pos}. "
-                )
-                logger.warning(
-                    f"Контекст: ...{prompt_buffer_c[max(0, current_pos - 20) : current_pos + 50]}..."
-                )
-                res_words.append(WordInfoRes(entropy=0.0, **word))
-                continue
-
-        end_idx = start_idx + len(word_text)
+        end_idx = start_idx + len(word["word"])
 
         # Собираем все уникальные токены, которые попали в диапазон слова
         # Используем set для уникальности, затем сортируем
