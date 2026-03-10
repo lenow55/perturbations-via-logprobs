@@ -15,6 +15,7 @@ from src.schemas import CheckLlmIn, CheckStage1Out, TA_logprob_list
 from src.utils.base import (
     calculate_prompt_logprobs,
     calculate_similarity,
+    check_out_folder_empty,
     configure_logging,
     create_openai_client,
 )
@@ -75,17 +76,7 @@ async def main(args: Namespace):
         config = AppSettings.model_validate_json(f.read())
 
     configure_logging(config=config)
-
-    meta_file = os.path.join(args.out_folder, "meta.json")
-    if not os.path.isdir(args.out_folder):
-        logger.warning(f"Try create out_folder {args.out_folder}")
-        os.mkdir(args.out_folder)
-    else:
-        if os.path.exists(meta_file):
-            logger.error(f"Metadata file {meta_file} exists in target dir: ABORT!!!")
-            return
-        else:
-            logger.info("Empty dir already exists")
+    meta_file = check_out_folder_empty(out_folder=args.out_folder)
 
     in_passages = os.path.join(args.input, "passages.json")
     in_checks = os.path.join(args.input, "checks.csv")

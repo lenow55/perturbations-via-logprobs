@@ -19,6 +19,7 @@ from src.schemas import (
     TA_words_list,
 )
 from src.utils.base import (
+    check_out_folder_empty,
     configure_logging,
 )
 from src.utils.word_analyzer import WordAnalyzerBuilder
@@ -52,17 +53,7 @@ def main(args: Namespace):
         config = AppSettings.model_validate_json(f.read())
 
     configure_logging(config=config)
-
-    meta_file = os.path.join(args.out_folder, "meta.json")
-    if not os.path.isdir(args.out_folder):
-        logger.warning(f"Try create out_folder {args.out_folder}")
-        os.mkdir(args.out_folder)
-    else:
-        if os.path.exists(meta_file):
-            logger.error(f"Metadata file {meta_file} exists in target dir: ABORT!!!")
-            return
-        else:
-            logger.info("Empty dir already exists")
+    meta_file = check_out_folder_empty(out_folder=args.out_folder)
 
     in_checks = os.path.join(args.stage, "checks.csv")
     in_logprobs = os.path.join(args.stage, "gen_logprobs.csv")

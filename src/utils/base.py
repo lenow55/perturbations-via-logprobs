@@ -2,6 +2,7 @@ import asyncio
 import json
 import logging
 from logging import config as log_config_m
+import os
 
 import torch
 from httpx import AsyncClient, Timeout
@@ -18,6 +19,20 @@ def configure_logging(config: AppSettings):
     with open(config.logging_conf_file) as l_f:
         logging_config_dict = json.loads(l_f.read())
         log_config_m.dictConfig(logging_config_dict)
+
+
+def check_out_folder_empty(out_folder: str):
+    meta_file = os.path.join(out_folder, "meta.json")
+    if not os.path.isdir(out_folder):
+        logger.warning(f"Try create out_folder {out_folder}")
+        os.mkdir(out_folder)
+    else:
+        if os.path.exists(meta_file):
+            logger.error(f"Metadata file {meta_file} exists in target dir: ABORT!!!")
+            raise RuntimeError
+        else:
+            logger.info("Empty dir already exists")
+    return meta_file
 
 
 def create_openai_client(config: LLMConfig) -> AsyncOpenAI:
