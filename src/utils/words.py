@@ -146,7 +146,7 @@ async def find_ptb_words(
     prompt_tokens_map_c = prompt_tokens_map[start_i:end_i]
 
     current_pos = 0
-
+    res_words: list[WordInfoRes] = []
     for word in words_infos:
         word_text = word["word"]
         word_normalized = normalize_text(word_text)
