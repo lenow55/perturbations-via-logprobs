@@ -19,7 +19,7 @@ def mean_entropy(tokens_entropies: list[float], count_logprobs: int):
 
 def first_entropy(tokens_entropies: list[float], count_logprobs: int):
     try:
-        word_entropy = tokens_entropies[0]
+        word_entropy = float(tokens_entropies[0])
         return word_entropy
     except IndexError:
         return 0.0

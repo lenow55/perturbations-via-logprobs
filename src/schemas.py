@@ -9,6 +9,9 @@ class TokenImportance(TypedDict):
     importance: float
 
 
+TA_tokens_list = TypeAdapter(list[TokenImportance])
+
+
 class TokenEntropy(TypedDict):
     token: str
     entropy: float
@@ -26,6 +29,9 @@ class WordInfoRes(WordInfo):
 
 class WordImportance(WordInfo):
     importance: float
+
+
+TA_words_list = TypeAdapter(list[WordImportance])
 
 
 # INFO: Контейнеры для хранения сценариев запросов
@@ -153,3 +159,9 @@ class CheckStage1Out(CheckLlmIn):
     gen_answer: str
     prompt_logprobs: list[None | dict[str, PromptLogprob]]
     similarity: float
+
+
+class Stage2Out(TypedDict):
+    check_id: int
+    tokens_importances: list[TokenImportance]
+    words_importances: list[WordImportance]
