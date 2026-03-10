@@ -5,10 +5,11 @@ import logging
 import os
 from argparse import Namespace
 from datetime import datetime
+from typing import Any
 
 import pandas as pd
 from openai import AsyncOpenAI
-from pydantic import BaseModel
+from pydantic import BaseModel, SerializeAsAny
 
 from src.config import AppSettings
 from src.metrics import WORD_HUB
@@ -17,6 +18,7 @@ from src.schemas import CheckLlmIn
 from src.utils.base import (
     configure_logging,
 )
+from src.utils.word_analyzer import WordAnalyzerBuilder
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +28,7 @@ class MetadataFileInfo(BaseModel):
     input_folder: str
     stage_folder: str
     output_folder: str
-    metric_name: str
+    metadata: SerializeAsAny[dict[Any, Any]]
 
 
 def stage_task(
@@ -49,10 +51,10 @@ def main(args: Namespace):
         raise RuntimeError("Bad argument for report value")
     if not isinstance(args.config, str):
         raise RuntimeError("Bad argument for config path value")
-    if not isinstance(args.metric, str):
-        raise RuntimeError("Bad metric value")
-    if args.metric not in WORD_HUB:
-        raise RuntimeError(f"Metric '{args.metric}' not in HUB")
+    if not isinstance(args.token_metric, str):
+        raise RuntimeError("Bad token-metric value")
+    if not isinstance(args.word_metric, str):
+        raise RuntimeError("Bad word-metric value")
 
     with open(args.config, "r") as f:
         config = AppSettings.model_validate_json(f.read())
@@ -95,13 +97,18 @@ def main(args: Namespace):
         f"Logprobs dataset readed from {in_logprobs} shape: {logprobs_df.shape}"
     )
 
-    # INFO: сохранение
+    builder = WordAnalyzerBuilder()
+    builder.set_token_metric(args.token_metric)
+    builder.set_word_metric(args.word_metric)
+    analyzer = builder.build()
 
+
+    # INFO: сохранение
     meta_info = MetadataFileInfo(
         input_folder=args.input,
         stage_folder=args.stage,
         output_folder=args.output,
-        metric_name=args.metric,
+        metadata=,
     )
     with open(meta_file, "w") as f:
         _ = f.write(meta_info.model_dump_json(indent=2))
@@ -134,10 +141,17 @@ if __name__ == "__main__":
         help="Путь до файла с результатом подсчёта значимости",
     )
     _ = parser.add_argument(
-        "-m",
-        "--metric",
+        "-t",
+        "--token-metric",
         type=str,
         required=True,
-        help="Код функции подсчёта метрики",
+        help="Код функции подсчёта метрики для токена",
+    )
+    _ = parser.add_argument(
+        "-w",
+        "--word-metric",
+        type=str,
+        required=True,
+        help="Код функции подсчёта метрики для слова",
     )
     main(parser.parse_args())
