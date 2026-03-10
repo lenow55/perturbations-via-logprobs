@@ -1,21 +1,18 @@
-import asyncio
 import csv
-from functools import partial
 import json
 import logging
 import os
 from argparse import Namespace
 from datetime import datetime
+from functools import partial
 from typing import Any
 
 import pandas as pd
-from openai import AsyncOpenAI
 from pydantic import BaseModel, SerializeAsAny
 
 from src.config import AppSettings
 from src.params import parser
 from src.schemas import (
-    CheckLlmIn,
     Stage2Out,
     TA_logprob_list,
     TA_tokens_list,
@@ -37,23 +34,12 @@ class MetadataFileInfo(BaseModel):
     metadata: SerializeAsAny[dict[Any, Any]]
 
 
-def stage_task(
-    check: CheckLlmIn,
-    passages: dict[int, str],
-    client: AsyncOpenAI,
-    client_embed: AsyncOpenAI,
-    semaphore: asyncio.Semaphore,
-    config: AppSettings,
-):
-    pass
-
-
 def main(args: Namespace):
     if not isinstance(args.input, str):
         raise RuntimeError("Bad argument for input folder")
     if not isinstance(args.stage, str):
         raise RuntimeError("Bad argument for stage file")
-    if not isinstance(args.output, str):
+    if not isinstance(args.out_folder, str):
         raise RuntimeError("Bad argument for report value")
     if not isinstance(args.config, str):
         raise RuntimeError("Bad argument for config path value")
@@ -140,7 +126,7 @@ def main(args: Namespace):
     meta_info = MetadataFileInfo(
         input_folder=args.input,
         stage_folder=args.stage,
-        output_folder=args.output,
+        output_folder=args.out_folder,
         metadata=builder.metadata,
     )
     with open(meta_file, "w") as f:
@@ -177,7 +163,7 @@ if __name__ == "__main__":
     )
     _ = parser.add_argument(
         "-o",
-        "--output",
+        "--out-folder",
         type=str,
         required=True,
         help="Путь до файла с результатом подсчёта значимости",
