@@ -17,7 +17,6 @@ from src.schemas import (
     Stage3In,
     Stage4Out,
     TA_logprob_list,
-    TA_words_list,
 )
 from src.utils.base import (
     calculate_prompt_logprobs,
@@ -143,9 +142,6 @@ async def main(args: Namespace):
         index="check_id",
         exclude=["prompt_logprobs", "gen_answer"],
     )
-    ta_func = partial(TA_words_list.dump_python, mode="json")
-    ta_func_json = partial(json.dumps, ensure_ascii=False)
-    df["ptb_words"] = df["ptb_words"].map(ta_func).map(ta_func_json)
     df.to_csv(out_main, quoting=csv.QUOTE_NONNUMERIC)
     logger.info(f"Stage4 prompt_logprobs saved into {out_main} file; shape: {df.shape}")
 
@@ -162,6 +158,9 @@ async def main(args: Namespace):
             "ptb_words",
         ],
     )
+    ta_func = partial(TA_logprob_list.dump_python, mode="json")
+    ta_func_json = partial(json.dumps, ensure_ascii=False)
+    df_p["prompt_logprobs"] = df_p["prompt_logprobs"].map(ta_func).map(ta_func_json)
     df_p.to_csv(out_logprobs, quoting=csv.QUOTE_NONNUMERIC)
 
     logger.info(
