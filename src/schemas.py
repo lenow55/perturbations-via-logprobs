@@ -161,6 +161,11 @@ class CheckStage1Out(CheckLlmIn):
     similarity: float
 
 
+class Stage3Out(CheckLlmIn):
+    ptb_words: list[WordImportance]
+    passage: str
+
+
 class Stage2Out(TypedDict):
     check_id: int
     tokens_importances: list[TokenImportance]
