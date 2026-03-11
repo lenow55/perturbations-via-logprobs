@@ -3,11 +3,11 @@ import csv
 import json
 import logging
 import os
+import traceback
 from argparse import Namespace
 from datetime import datetime
 from functools import partial
 from operator import itemgetter
-import traceback
 from types import UnionType
 from typing import Any
 
@@ -132,13 +132,28 @@ async def stage_task(
                 {
                     "role": "user",
                     "content": f"""
-Тебе нужно придумать противоположные слова или слова замены для заданного набора слов:
+Задание:
+Тебе нужно придумать противоположные слова или слова замены для ключей в переданой схеме
 
-Набор слов:
+Действия:
+1. считай слово без профикса вида i: (1: 2: и тд)
+2. придумай другое слово вместо предоставленного.
+например: он - она, оратор - слушатель, взял - положил, пришёл - ушёл
+3. Замени имена и названия на придуманные:
+например: Илья - Аня, Ланит - ChatGPT, Волга - Луна
+
+Выходная схема:
 {json.dumps(out_schema.model_json_schema(), indent=1)}
 
-Правила:
-1. при создании нового слова не учитывай профикс вида i: (1: 2: и тд)
+Задание:
+Тебе нужно придумать противоположные слова или слова замены для ключей в переданой схеме
+
+Действия:
+1. считай слово без профикса вида i: (1: 2: и тд)
+2. придумай другое слово вместо предоставленного.
+например: он - она, оратор - слушатель, взял - положил, пришёл - ушёл
+3. Замени имена и названия на придуманные:
+например: Илья - Аня, Ланит - ChatGPT, Волга - Луна
 """,
                 },
             ],
@@ -147,9 +162,13 @@ async def stage_task(
             **llm_conf.params_extra,
         )
 
-    ptb_words_d = response.choices[0].model_dump(mode="python", by_alias=True)
-    ptb_words: list[WordImportance] = []
+    ptb_words_m = response.choices[0].message.parsed
+    if not isinstance(ptb_words_m, BaseModel):
+        raise RuntimeError("Error when llm generate")
+    ptb_words_d = ptb_words_m.model_dump(mode="python", by_alias=True)
+    logger.debug(ptb_words_m.model_dump_json(indent=2))
 
+    ptb_words: list[WordImportance] = []
     for i, word in enumerate(top_words):
         key = f"{i}:" + word["word"]
         value = ptb_words_d.get(key, None)
@@ -165,6 +184,11 @@ async def stage_task(
         )
     if len(top_words) and not len(ptb_words):
         logger.error(f"Request id {check['check_id']}: llm return empty list")
+        logger.debug(
+            json.dumps(
+                TA_words_list.dump_python(ptb_words), indent=2, ensure_ascii=False
+            )
+        )
         raise LLMMismatch
 
     # INFO: дальше надо новые слова внедрить в контекст
@@ -290,6 +314,7 @@ async def main(args: Namespace):
             _ = t.cancel()
         _ = await asyncio.gather(*tasks, return_exceptions=True)
         logger.error("Все задачи корректно завершены")
+        exit(1)
 
     meta_info = MetadataFileInfo(
         input_folder=args.input,
