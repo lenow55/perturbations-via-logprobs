@@ -166,6 +166,16 @@ class Stage3Out(CheckLlmIn):
     passage: str
 
 
+class Stage3In(CheckLlmIn):
+    passage: str
+    ptb_words: str
+
+
+class Stage4Out(CheckStage1Out):
+    passage: str
+    ptb_words: str
+
+
 class Stage2Out(TypedDict):
     check_id: int
     tokens_importances: list[TokenImportance]
