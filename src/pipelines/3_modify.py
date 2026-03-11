@@ -1,12 +1,13 @@
 import asyncio
 import csv
-from datetime import datetime
 import json
 import logging
 import os
 from argparse import Namespace
+from datetime import datetime
 from functools import partial
 from operator import itemgetter
+import traceback
 from types import UnionType
 from typing import Any
 
@@ -19,8 +20,6 @@ from src.params import parser
 from src.schemas import (
     CheckLlmIn,
     Stage3Out,
-    TA_logprob_list,
-    TA_tokens_list,
     TA_words_list,
     WordImportance,
 )
@@ -268,7 +267,29 @@ async def main(args: Namespace):
                 )
             )
         )
-    results = await asyncio.gather(*tasks)
+    results: list[Stage3Out] = []
+    counter = 0
+    try:
+        for task in asyncio.as_completed(tasks):
+            try:
+                cluster_prop = await task
+                results.append(cluster_prop)
+            except LLMMismatch as e:
+                continue
+            except Exception as e:
+                logger.warning(f"Error when generate ptbs, record will skip: {e}")
+                logger.debug(traceback.format_exc())
+                continue
+            finally:
+                counter = counter + 1
+                if counter % 100 == 0:
+                    logger.info(f"Processed {counter}/{len(tasks)}")
+    except asyncio.exceptions.CancelledError:
+        logger.error("Получен Ctrl+C, отменяем задачи...")
+        for t in tasks:
+            _ = t.cancel()
+        _ = await asyncio.gather(*tasks, return_exceptions=True)
+        logger.error("Все задачи корректно завершены")
 
     meta_info = MetadataFileInfo(
         input_folder=args.input,
@@ -317,7 +338,7 @@ if __name__ == "__main__":
         help="Путь до директории с пробами и ответами",
     )
     _ = parser.add_argument(
-        "-c",
+        "-n",
         "--count-perturb",
         type=int,
         default=5,
