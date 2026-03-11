@@ -162,9 +162,6 @@ async def main(args: Namespace):
             "ptb_words",
         ],
     )
-    ta_func = partial(TA_logprob_list.dump_python, mode="json")
-    ta_func_json = partial(json.dumps, ensure_ascii=False)
-    df_p["prompt_logprobs"] = df_p["prompt_logprobs"].map(ta_func).map(ta_func_json)
     df_p.to_csv(out_logprobs, quoting=csv.QUOTE_NONNUMERIC)
 
     logger.info(
