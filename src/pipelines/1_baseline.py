@@ -5,6 +5,7 @@ import json
 import logging
 import os
 from argparse import Namespace
+import traceback
 
 import pandas as pd
 from openai import AsyncOpenAI
@@ -116,7 +117,28 @@ async def main(args: Namespace):
                 )
             )
         )
-    results = await asyncio.gather(*tasks)
+    results: list[CheckStage1Out] = []
+    counter = 0
+    try:
+        for task in asyncio.as_completed(tasks):
+            try:
+                cluster_prop = await task
+                results.append(cluster_prop)
+            except Exception as e:
+                logger.warning(f"Error when generate base, record will skip: {e}")
+                logger.debug(traceback.format_exc())
+                continue
+            finally:
+                counter = counter + 1
+                if counter % 100 == 0:
+                    logger.info(f"Processed {counter}/{len(tasks)}")
+    except asyncio.exceptions.CancelledError:
+        logger.error("Получен Ctrl+C, отменяем задачи...")
+        for t in tasks:
+            _ = t.cancel()
+        _ = await asyncio.gather(*tasks, return_exceptions=True)
+        logger.error("Все задачи корректно завершены")
+        exit(1)
 
     meta_info = MetadataFileInfo(**config.model_dump(mode="python"))
     with open(meta_file, "w") as f:
