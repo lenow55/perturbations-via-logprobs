@@ -81,10 +81,10 @@ def modify_text_and_get_indices(text: str, replacements: list[WordImportance]):
 
 def schema_generator(words: list[WordImportance]) -> type[BaseModel]:
     fields: dict[str, tuple[type | UnionType, Any]] = {}
-    for i, word in enumerate(words):
-        name = f"{i}:" + word["word"]
+    for i, _ in enumerate(words):
+        name = f"{i}"
         field: dict[str, tuple[type | UnionType, Any]] = {
-            name: (str, Field(alias=name))
+            name: (str, Field(alias=name, description=f"Замена для слова {i}"))
         }
         fields.update(field)
 
@@ -117,6 +117,7 @@ async def stage_task(
     count_top = min(count_perturb, len(words_importances))
     sorted_words = sorted(words_importances, key=itemgetter("importance"), reverse=True)
     top_words = sorted_words[:count_top]
+    top_words_str = "\n-".join([w["word"] for w in top_words])
     out_schema = schema_generator(words=top_words)
 
     async with semaphore:
@@ -142,8 +143,11 @@ async def stage_task(
 3. Замени имена и названия на придуманные:
 например: Илья - Аня, Ланит - ChatGPT, Волга - Луна
 
+Слова:
+{top_words_str}
+
 Выходная схема:
-{json.dumps(out_schema.model_json_schema(), indent=1)}
+{json.dumps(out_schema.model_json_schema(), indent=0, ensure_ascii=False)}
 
 Задание:
 Тебе нужно придумать противоположные слова или слова замены для ключей в переданой схеме
@@ -154,6 +158,12 @@ async def stage_task(
 например: он - она, оратор - слушатель, взял - положил, пришёл - ушёл
 3. Замени имена и названия на придуманные:
 например: Илья - Аня, Ланит - ChatGPT, Волга - Луна
+
+Слова:
+{top_words_str}
+
+Выходная схема:
+{json.dumps(out_schema.model_json_schema(), indent=0, ensure_ascii=False)}
 """,
                 },
             ],
@@ -170,7 +180,7 @@ async def stage_task(
 
     ptb_words: list[WordImportance] = []
     for i, word in enumerate(top_words):
-        key = f"{i}:" + word["word"]
+        key = f"{i}"
         value = ptb_words_d.get(key, None)
         if not isinstance(value, str):
             continue
