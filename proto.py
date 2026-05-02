@@ -12,10 +12,11 @@ OutputT = TypeVar("OutputT", covariant=True)
 class MainFunctionSignature(Protocol[InputT, ContextT, ConfigT, OutputT]):
     def __call__(
         self,
-        *,
         input: InputT,
         context: ContextT,
         config: ConfigT,
+        *args: Any,
+        **kwargs: Any,
     ) -> OutputT: ...
 
 
@@ -29,37 +30,57 @@ def validate_protocol_conformance(
     """
     Проверяет, соответствует ли сигнатура функции методу __call__ протокола.
     Поддерживает проверку имен аргументов в рантайме.
+    Игнорирует *args и **kwargs из протокола и допускает дополнительные параметры в функции.
     """
     if not hasattr(protocol_class, "__call__"):
         raise TypeError(f"{protocol_class.__name__} не является вызываемым протоколом.")
 
     # Получаем ожидаемую сигнатуру из протокола (пропуская 'self')
     proto_sig = inspect.signature(protocol_class.__call__)
-    proto_params = list(proto_sig.parameters.values())[1:]  # Убираем self
+    all_proto_params = list(proto_sig.parameters.values())[1:]
+
+    # Фильтруем *args и **kwargs из протокола
+    proto_params = [
+        p
+        for p in all_proto_params
+        if p.kind
+        not in (inspect.Parameter.VAR_POSITIONAL, inspect.Parameter.VAR_KEYWORD)
+    ]
 
     # Получаем реальную сигнатуру функции
     func_sig = inspect.signature(func)
     func_params = list(func_sig.parameters.values())
 
-    # 1. Проверка количества аргументов
-    if len(proto_params) != len(func_params):
+    # Отладочный вывод
+    print(f"Протокол (все): {[p.name for p in all_proto_params]}")
+    print(f"Протокол (фильтрованные): {[p.name for p in proto_params]}")
+    print(f"Функция: {[p.name for p in func_params]}")
+
+    # 1. Проверка минимального количества аргументов
+    # Функция должна иметь как минимум столько же параметров, сколько в протоколе
+    if len(func_params) < len(proto_params):
         raise TypeError(
-            f"Несоответствие количества аргументов:\nожидалось {len(proto_params)}, получено {len(func_params)}"
+            f"Недостаточно аргументов:\nожидалось минимум {len(proto_params)}, получено {len(func_params)}"
         )
 
-    # 2. Проверка имен и типов (порядок важен для позиционных, имена — для keyword-only)
-    for p_param, f_param in zip(proto_params, func_params):
+    # 2. Проверка имен первых N параметров (где N = количество обязательных в протоколе)
+    for i, (p_param, f_param) in enumerate(zip(proto_params, func_params)):
         if p_param.name != f_param.name:
             raise NameError(
-                f"Ошибка в имени аргумента: ожидалось '{p_param.name}',\nно в функции написано '{f_param.name}'"
+                f"Ошибка в имени аргумента #{i + 1}: ожидалось '{p_param.name}',\nно в функции написано '{f_param.name}'"
             )
 
     return True
 
 
 # Теперь всё совпадает символ в символ:
-def my_kafka_handler(*, input: str, context: str, confign: dict[str, int]) -> bool:
-    print(f"Input: {input}, Context: {context}, Config: {confign}")
+def my_kafka_handler(
+    input: str,
+    context: str,
+    config: dict[str, int],
+    config2: dict[str, int],
+) -> bool:
+    print(f"Input: {input}, Context: {context}, Config: {config}")
     return True
 
 
