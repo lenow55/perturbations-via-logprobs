@@ -62,7 +62,8 @@ class WordAnalyzer:
 
         # INFO: обрезаем всё кроме контекста
         start_i = prompt_buffer.find("context: ") + 9
-        end_i = prompt_buffer.find("question: ")
+        # end_i = prompt_buffer.find("question: ")
+        end_i = len(prompt_buffer)
 
         prompt_buffer_c = prompt_buffer[start_i:end_i]
         prompt_tokens_map_c = prompt_tokens_map[start_i:end_i]

@@ -51,7 +51,7 @@ async def stage_task(
         logger.critical("Cant run without embed config")
         raise RuntimeError("bad config")
 
-    text = "context: " + check["passage"] + "\nquestion: " + check["question"]
+    text = "question: " + check["question"] + "\ncontext: " + check["passage"]
     answer, prompt_logprobs = await calculate_prompt_logprobs(
         idx=str(check["check_id"]),
         query=text,

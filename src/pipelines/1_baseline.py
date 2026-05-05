@@ -40,7 +40,7 @@ async def stage_task(
         raise RuntimeError("bad config")
 
     text = (
-        "context: " + passages[check["passage_id"]] + "\nquestion: " + check["question"]
+        "question: " + check["question"] + "\ncontext: " + passages[check["passage_id"]]
     )
     answer, prompt_logprobs = await calculate_prompt_logprobs(
         idx=str(check["check_id"]),
